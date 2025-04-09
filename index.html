@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Dictionary</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    .tabs button { margin-right: 10px; padding: 6px 12px; }
+    .entry { border: 1px solid #ccc; padding: 8px; margin-bottom: 8px; }
+    .gray { color: gray; font-style: italic; }
+    canvas { max-width: 400px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>Interactive Dictionary</h1>
+  <div class="tabs">
+    <button onclick="showTab('dictionary')">Dictionary</button>
+    <button onclick="showTab('admin')">Admin Panel</button>
+    <button onclick="showTab('analysis')">Analysis</button>
+    <button onclick="loadCSV()">Import CSV</button>
+  </div>
+
+  <div id="dictionary" class="tab">
+    <h2>Dictionary</h2>
+    <div id="dictionaryList"></div>
+  </div>
+
+  <div id="admin" class="tab hidden">
+    <h2>Admin Panel</h2>
+    <div id="adminList"></div>
+  </div>
+
+  <div id="analysis" class="tab hidden">
+    <h2>Analysis</h2>
+    <canvas id="etymologyChart"></canvas>
+    <div id="topicsRaw"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const sampleCSV = `word,meaning,etymology,topic
+apple,a fruit,germanic,daily life
+tractor,a farm vehicle,slavic,agriculture
+joke,something funny,romance,humor`;
+
+    let entries = [];
+
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tab).classList.remove('hidden');
+      if (tab === 'dictionary') renderDictionary();
+      if (tab === 'admin') renderAdmin();
+      if (tab === 'analysis') renderAnalysis();
+    }
+
+    function loadCSV() {
+      const lines = sampleCSV.trim().split('\n');
+      const headers = lines[0].split(',');
+      entries = lines.slice(1).map(line => {
+        const parts = line.split(',');
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = parts[i]);
+        obj.status = 'none';
+        obj.editedVersion = '';
+        return obj;
+      });
+      alert('Sample CSV loaded!');
+      renderDictionary();
+    }
+
+    function renderDictionary() {
+      const list = document.getElementById('dictionaryList');
+      list.innerHTML = '';
+      entries.forEach((entry, i) => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <strong>${entry.word}</strong>. ${entry.meaning}
+          ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
+          <br><button onclick="editEntry(${i})">Edit</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderAdmin() {
+      const list = document.getElementById('adminList');
+      list.innerHTML = '';
+      entries.forEach((entry, i) => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <strong>${entry.word}</strong>. ${entry.meaning}
+          ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
+          <br>
+          <button onclick="editEntry(${i})">Edit</button>
+          ${entry.status === 'pending' ? `
+            <button onclick="confirmEdit(${i})">Confirm</button>
+            <button onclick="rejectEdit(${i})">Reject</button>
+          ` : ''}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function editEntry(i) {
+      const newMeaning = prompt('Enter new meaning:', entries[i].meaning);
+      if (newMeaning && newMeaning !== entries[i].meaning) {
+        entries[i].editedVersion = `${entries[i].word}. ${newMeaning}`;
+        entries[i].status = 'pending';
+        renderDictionary();
+        renderAdmin();
+      }
+    }
+
+    function confirmEdit(i) {
+      const parts = entries[i].editedVersion.split('. ');
+      entries[i].meaning = parts.slice(1).join('. ');
+      entries[i].editedVersion = '';
+      entries[i].status = 'confirmed';
+      renderAdmin();
+      renderDictionary();
+    }
+
+    function rejectEdit(i) {
+      entries[i].editedVersion = '';
+      entries[i].status = 'none';
+      renderAdmin();
+      renderDictionary();
+    }
+
+    function renderAnalysis() {
+      const ety = {}, topics = {};
+      entries.forEach(e => {
+        ety[e.etymology] = (ety[e.etymology] || 0) + 1;
+        topics[e.topic] = (topics[e.topic] || 0) + 1;
+      });
+
+      new Chart(document.getElementById('etymologyChart'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(ety),
+          datasets: [{
+            data: Object.values(ety),
+            backgroundColor: ['#f87171', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa']
+          }]
+        }
+      });
+
+      const topicsDiv = document.getElementById('topicsRaw');
+      topicsDiv.innerHTML = '<h3>Topics (Raw)</h3>';
+      for (const topic in topics) {
+        topicsDiv.innerHTML += `${topic} (${topics[topic]}) &nbsp;&nbsp;`;
+      }
+    }
+  </script>
+</body>
+</html>
