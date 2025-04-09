@@ -11,7 +11,6 @@
     .entry { border: 1px solid #ccc; padding: 8px; margin-bottom: 8px; }
     .gray { color: gray; font-style: italic; }
     canvas { max-width: 400px; margin-top: 20px; }
-    #mockEtymologyChart, #mockWordCloud { margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -26,158 +25,155 @@
 
   <div id="dictionary" class="tab">
     <h2>Dictionary</h2>
-    <div id="dictionaryList"></div> <!-- This is where the dictionary entries will appear -->
+    <div id="dictionaryList"></div>
   </div>
 
   <div id="admin" class="tab hidden">
     <h2>Admin Panel</h2>
-    <div id="adminList"></div> <!-- This is where the editable dictionary entries will appear -->
+    <div id="adminList"></div>
   </div>
 
   <div id="analysis" class="tab hidden">
     <h2>Analysis</h2>
-    <h3>Mock Pie Chart (Etymology)</h3>
-    <div id="mockEtymologyChart" style="width: 300px; height: 300px; background: #f0f0f0; display: flex; justify-content: center; align-items: center;">
-      <span style="font-size: 24px;">Mock Pie Chart</span>
-    </div>
-
-    <h3>Mock Word Cloud</h3>
-    <div id="mockWordCloud" style="font-size: 18px; line-height: 1.5;">
-      <span style="font-size: 30px; margin-right: 10px;">Agriculture</span> 
-      <span style="font-size: 24px; margin-right: 10px;">Humor</span> 
-      <span style="font-size: 20px; margin-right: 10px;">Daily Life</span> 
-      <span style="font-size: 18px; margin-right: 10px;">Technology</span>
-      <span style="font-size: 22px; margin-right: 10px;">Food</span>
-    </div>
+    <!-- Placeholder for charts -->
+    <div id="mockChart">[Pie chart placeholder]</div>
+    <div id="topicsRaw">[Word cloud placeholder]</div>
   </div>
 
   <script>
-    // Sample CSV Data (mock data for demo purposes)
     const sampleCSV = `word,meaning,etymology,topic
-    apple,a fruit,germanic,daily life
-    tractor,a farm vehicle,slavic,agriculture
-    joke,something funny,romance,humor
-    computer,an electronic device,latin,technology
-    book,a set of written or printed pages,germanic,daily life`;
+apple,a fruit,germanic,daily life
+tractor,a farm vehicle,slavic,agriculture
+joke,something funny,romance,humor`;
 
-    // Default dictionary entries
-    let entries = [
-      { word: "apple", meaning: "a fruit", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "" },
-      { word: "tractor", meaning: "a farm vehicle", etymology: "slavic", topic: "agriculture", status: "none", editedVersion: "" },
-      { word: "joke", meaning: "something funny", etymology: "romance", topic: "humor", status: "none", editedVersion: "" },
-      { word: "computer", meaning: "an electronic device", etymology: "latin", topic: "technology", status: "none", editedVersion: "" },
-      { word: "book", meaning: "a set of written or printed pages", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "" }
+    let entries = [];
+
+    // Initialize the dictionary with some mock entries
+    const mockEntries = [
+      { word: "apple", meaning: "a fruit", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "", isEditing: false },
+      { word: "tractor", meaning: "a farm vehicle", etymology: "slavic", topic: "agriculture", status: "none", editedVersion: "", isEditing: false },
+      { word: "joke", meaning: "something funny", etymology: "romance", topic: "humor", status: "none", editedVersion: "", isEditing: false }
     ];
 
-    // Render dictionary entries immediately on page load
+    // Set the mock entries initially
+    entries = mockEntries;
+
+    // Render the dictionary when the page loads
     renderDictionary();
 
-    // Render word cloud immediately on page load (only once)
-    renderWordCloud();
-
-    // Function to display the selected tab
     function showTab(tab) {
-      document.querySelectorAll('.tab').forEach(el => el.classList.add('hidden')); // Hide all tabs
-      document.getElementById(tab).classList.remove('hidden'); // Show the selected tab
-      if (tab === 'dictionary') renderDictionary(); // Render dictionary when it's selected
-      if (tab === 'admin') renderAdmin(); // Render admin panel when it's selected
-      if (tab === 'analysis') renderAnalysis(); // Render analysis when it's selected
+      document.querySelectorAll('.tab').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tab).classList.remove('hidden');
+      if (tab === 'dictionary') renderDictionary();
+      if (tab === 'admin') renderAdmin();
+      if (tab === 'analysis') renderAnalysis();
     }
 
-    // Function to load the CSV data into the entries array (if needed)
     function loadCSV() {
-      const lines = sampleCSV.trim().split('\n'); // Split the CSV by newlines
-      const headers = lines[0].split(','); // Get the header names from the first line
+      const lines = sampleCSV.trim().split('\n');
+      const headers = lines[0].split(',');
       entries = lines.slice(1).map(line => {
-        const parts = line.split(','); // Split each entry by commas
+        const parts = line.split(',');
         const obj = {};
-        headers.forEach((h, i) => obj[h] = parts[i]); // Create an object for each entry
-        obj.status = 'none'; // Initial status (none)
-        obj.editedVersion = ''; // No edited version yet
+        headers.forEach((h, i) => obj[h] = parts[i]);
+        obj.status = 'none';
+        obj.editedVersion = '';
         return obj;
       });
-      alert('Sample CSV loaded!'); // Notify user
-      renderDictionary(); // Re-render the dictionary with the new data
+      alert('Sample CSV loaded!');
+      renderDictionary();
     }
 
-    // Function to render dictionary entries
     function renderDictionary() {
       const list = document.getElementById('dictionaryList');
-      list.innerHTML = ''; // Clear the current list
+      list.innerHTML = '';
       entries.forEach((entry, i) => {
         const div = document.createElement('div');
         div.className = 'entry';
-        div.innerHTML = `
-          <strong>${entry.word}</strong>. ${entry.meaning}
-          <br><button onclick="editEntry(${i})">Edit</button>
-        `;
-        list.appendChild(div); // Add each entry to the list
+        
+        // If the entry is being edited, show the input field, else show the regular text
+        if (entry.isEditing) {
+          div.innerHTML = `
+            <strong>${entry.word}</strong>. <input type="text" id="editMeaning${i}" value="${entry.editedVersion || entry.meaning}" />
+            <button onclick="saveEdit(${i})">Save</button>
+            <button onclick="cancelEdit(${i})">Cancel</button>
+          `;
+        } else {
+          div.innerHTML = `
+            <strong>${entry.word}</strong>. ${entry.meaning}
+            ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
+            <br><button onclick="editEntry(${i})">Edit</button>
+          `;
+        }
+
+        list.appendChild(div);
       });
     }
 
-    // Function to render admin panel entries
     function renderAdmin() {
       const list = document.getElementById('adminList');
-      list.innerHTML = ''; // Clear the current list
+      list.innerHTML = '';
       entries.forEach((entry, i) => {
         const div = document.createElement('div');
         div.className = 'entry';
         div.innerHTML = `
           <strong>${entry.word}</strong>. ${entry.meaning}
-          <br><button onclick="editEntry(${i})">Edit</button>
+          ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
+          <br>
+          <button onclick="editEntry(${i})">Edit</button>
           ${entry.status === 'pending' ? `
             <button onclick="confirmEdit(${i})">Confirm</button>
             <button onclick="rejectEdit(${i})">Reject</button>
           ` : ''}
         `;
-        list.appendChild(div); // Add each entry to the list
+        list.appendChild(div);
       });
     }
 
-    // Function to handle editing an entry
+    function renderAnalysis() {
+      // Placeholder for mock charts
+      document.getElementById('mockChart').innerHTML = '[Pie chart placeholder]';
+      document.getElementById('topicsRaw').innerHTML = '[Word cloud placeholder]';
+    }
+
     function editEntry(i) {
-      const newMeaning = prompt('Enter new meaning:', entries[i].meaning); // Prompt for a new meaning
+      entries[i].isEditing = true;
+      renderDictionary(); // Re-render dictionary to show editable field
+    }
+
+    function saveEdit(i) {
+      const newMeaning = document.getElementById(`editMeaning${i}`).value;
       if (newMeaning && newMeaning !== entries[i].meaning) {
-        entries[i].editedVersion = `${entries[i].word}. ${newMeaning}`; // Save the edited version
-        entries[i].status = 'pending'; // Mark as pending
-        renderDictionary(); // Re-render the dictionary with the updated data
+        entries[i].editedVersion = newMeaning;
+        entries[i].status = 'pending';
+        entries[i].isEditing = false;
+        renderDictionary();
+        renderAdmin();
       }
     }
 
-    // Function to confirm an edit
+    function cancelEdit(i) {
+      entries[i].isEditing = false;
+      renderDictionary();
+    }
+
     function confirmEdit(i) {
-      const parts = entries[i].editedVersion.split('. ');
-      entries[i].meaning = parts.slice(1).join('. '); // Update the meaning with the edited version
-      entries[i].editedVersion = ''; // Clear the edited version
-      entries[i].status = 'confirmed'; // Mark as confirmed
-      renderAdmin(); // Re-render the admin panel
-      renderDictionary(); // Re-render the dictionary
+      entries[i].meaning = entries[i].editedVersion;
+      entries[i].editedVersion = '';
+      entries[i].status = 'confirmed';
+      entries[i].isEditing = false;
+      renderAdmin();
+      renderDictionary();
     }
 
-    // Function to reject an edit
     function rejectEdit(i) {
-      entries[i].editedVersion = ''; // Clear the edited version
-      entries[i].status = 'none'; // Reset the status
-      renderAdmin(); // Re-render the admin panel
-      renderDictionary(); // Re-render the dictionary
+      entries[i].editedVersion = '';
+      entries[i].status = 'none';
+      entries[i].isEditing = false;
+      renderAdmin();
+      renderDictionary();
     }
 
-    // Function to render the analysis page (mock data)
-    function renderAnalysis() {
-      // Analysis rendering logic here if needed
-    }
-
-    // Function to render the word cloud (only once on page load)
-    function renderWordCloud() {
-      const topicsDiv = document.getElementById('mockWordCloud');
-      topicsDiv.innerHTML = `
-        <span style="font-size: 30px; margin-right: 10px;">Agriculture</span> 
-        <span style="font-size: 24px; margin-right: 10px;">Humor</span> 
-        <span style="font-size: 20px; margin-right: 10px;">Daily Life</span> 
-        <span style="font-size: 18px; margin-right: 10px;">Technology</span>
-        <span style="font-size: 22px; margin-right: 10px;">Food</span>
-      `;
-    }
   </script>
 </body>
 </html>
