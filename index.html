@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Dictionary</title>
+  <title>Interaktivni kajkavski rječnik</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     .hidden { display: none; }
@@ -11,64 +11,90 @@
     .entry { border: 1px solid #ccc; padding: 8px; margin-bottom: 8px; }
     .gray { color: gray; font-style: italic; }
     canvas { max-width: 400px; margin-top: 20px; }
+    .form-container { margin-top: 20px; }
+    .form-container input, .form-container button { margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
-  <h1>Interactive Dictionary</h1>
+  <h1>Interaktivni kajkavski rječnik</h1>
   <div class="tabs">
-    <button onclick="showTab('dictionary')">Dictionary</button>
-    <button onclick="showTab('admin')">Admin Panel</button>
-    <button onclick="showTab('analysis')">Analysis</button>
+    <button onclick="showTab('rjecnik')">Rječnik</button>
+    <button onclick="showTab('urednik')">Urednik</button>
+    <button onclick="showTab('analiza')">Analiza</button>
     <button onclick="loadCSV()">Import CSV</button>
   </div>
 
-  <div id="dictionary" class="tab">
-    <h2>Dictionary</h2>
+  <!-- Button for Novi Unos -->
+  <button onclick="showNewEntryForm()" style="margin-top: 10px;">Novi Unos</button>
+
+  <div id="rjecnik" class="tab">
+    <h2>Rječnik</h2>
     <div id="dictionaryList"></div>
   </div>
 
-  <div id="admin" class="tab hidden">
-    <h2>Admin Panel</h2>
+  <div id="urednik" class="tab hidden">
+    <h2>Urednik</h2>
     <div id="adminList"></div>
   </div>
 
-  <div id="analysis" class="tab hidden">
-    <h2>Analysis</h2>
-    <!-- Placeholder for charts -->
+  <div id="analiza" class="tab hidden">
+    <h2>Analiza</h2>
     <div id="mockChart">[Pie chart placeholder]</div>
     <div id="topicsRaw">[Word cloud placeholder]</div>
   </div>
 
+  <!-- New Entry Form -->
+  <div id="newEntryForm" class="form-container hidden">
+    <h3>Add New Word</h3>
+    <label for="newWord">Word:</label>
+    <input type="text" id="newWord" placeholder="Enter word" />
+    <br />
+    <label for="newMeaning">Meaning:</label>
+    <input type="text" id="newMeaning" placeholder="Enter meaning" />
+    <br />
+    <button onclick="addNewEntry()">Add Entry</button>
+    <button onclick="cancelNewEntry()">Cancel</button>
+  </div>
+
   <script>
     const sampleCSV = `word,meaning,etymology,topic
-apple,a fruit,germanic,daily life
-tractor,a farm vehicle,slavic,agriculture
-joke,something funny,romance,humor`;
+    apple,a fruit,germanic,daily life
+    tractor,a farm vehicle,slavic,agriculture
+    joke,something funny,romance,humor`;
 
     let entries = [];
 
-    // Initialize the dictionary with some mock entries
+    // Initialize the dictionary with mock entries
     const mockEntries = [
-      { word: "apple", meaning: "a fruit", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "", isEditing: false },
-      { word: "tractor", meaning: "a farm vehicle", etymology: "slavic", topic: "agriculture", status: "none", editedVersion: "", isEditing: false },
-      { word: "joke", meaning: "something funny", etymology: "romance", topic: "humor", status: "none", editedVersion: "", isEditing: false }
+      { word: "apple", meaning: "a fruit", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "", isEditing: false, hidden: false },
+      { word: "tractor", meaning: "a farm vehicle", etymology: "slavic", topic: "agriculture", status: "none", editedVersion: "", isEditing: false, hidden: false },
+      { word: "joke", meaning: "something funny", etymology: "romance", topic: "humor", status: "none", editedVersion: "", isEditing: false, hidden: false }
     ];
 
-    // Set the mock entries initially
     entries = mockEntries;
 
-    // Render the dictionary when the page loads
     renderDictionary();
 
+    // Function to show different tabs
     function showTab(tab) {
       document.querySelectorAll('.tab').forEach(el => el.classList.add('hidden'));
       document.getElementById(tab).classList.remove('hidden');
-      if (tab === 'dictionary') renderDictionary();
-      if (tab === 'admin') renderAdmin();
-      if (tab === 'analysis') renderAnalysis();
+      
+      // Hide "Novi Unos" button for Analiza and Import CSV tabs
+      const noviUnosButton = document.querySelector('button[onclick="showNewEntryForm()"]');
+      if (tab === 'analiza' || tab === 'importCSV') {
+        noviUnosButton.style.display = 'none';
+      } else {
+        noviUnosButton.style.display = 'inline-block';
+      }
+
+      if (tab === 'rjecnik') renderDictionary();
+      if (tab === 'urednik') renderAdmin();
+      if (tab === 'analiza') renderAnalysis();
     }
 
+    // Function to load CSV data
     function loadCSV() {
       const lines = sampleCSV.trim().split('\n');
       const headers = lines[0].split(',');
@@ -78,20 +104,24 @@ joke,something funny,romance,humor`;
         headers.forEach((h, i) => obj[h] = parts[i]);
         obj.status = 'none';
         obj.editedVersion = '';
+        obj.hidden = false;  // Add a hidden property to each entry
         return obj;
       });
       alert('Sample CSV loaded!');
       renderDictionary();
     }
 
+    // Function to render the dictionary entries
     function renderDictionary() {
       const list = document.getElementById('dictionaryList');
       list.innerHTML = '';
       entries.forEach((entry, i) => {
+        if (entry.hidden) return;  // Skip rendering hidden entries
+
         const div = document.createElement('div');
         div.className = 'entry';
-        
-        // If the entry is being edited, show the input field, else show the regular text
+
+        // If the entry is being edited, show input field, else show regular text
         if (entry.isEditing) {
           div.innerHTML = `
             <strong>${entry.word}</strong>. <input type="text" id="editMeaning${i}" value="${entry.editedVersion || entry.meaning}" />
@@ -102,7 +132,7 @@ joke,something funny,romance,humor`;
           div.innerHTML = `
             <strong>${entry.word}</strong>. ${entry.meaning}
             ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
-            <br><button onclick="editEntry(${i})">Edit</button>
+            <br><button onclick="editEntry(${i})">Uredi</button>
           `;
         }
 
@@ -110,37 +140,55 @@ joke,something funny,romance,humor`;
       });
     }
 
+    // Function to render the admin panel with hide buttons
     function renderAdmin() {
       const list = document.getElementById('adminList');
       list.innerHTML = '';
       entries.forEach((entry, i) => {
+        if (entry.hidden) return;  // Skip rendering hidden entries
+
         const div = document.createElement('div');
         div.className = 'entry';
         div.innerHTML = `
           <strong>${entry.word}</strong>. ${entry.meaning}
           ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
           <br>
-          <button onclick="editEntry(${i})">Edit</button>
+          <button onclick="editEntry(${i})">Uredi</button>
           ${entry.status === 'pending' ? `
-            <button onclick="confirmEdit(${i})">Confirm</button>
-            <button onclick="rejectEdit(${i})">Reject</button>
+            <button onclick="confirmEdit(${i})">Prihvati</button>  <!-- Renamed -->
+            <button onclick="rejectEdit(${i})">Odbaci</button>  <!-- Renamed -->
           ` : ''}
+          <button onclick="hideEntry(${i})">Izbriši</button> <!-- Hide button now -->
         `;
         list.appendChild(div);
       });
     }
 
+    // Function to hide an entry (instead of deleting)
+    function hideEntry(i) {
+      if (confirm(`Are you sure you want to hide the word "${entries[i].word}"?`)) {
+        // Set the hidden property to true
+        entries[i].hidden = true;
+
+        // Re-render both the dictionary and admin list to reflect the change
+        renderDictionary();
+        renderAdmin();
+      }
+    }
+
+    // Function to render the analysis (currently a placeholder)
     function renderAnalysis() {
-      // Placeholder for mock charts
       document.getElementById('mockChart').innerHTML = '[Pie chart placeholder]';
       document.getElementById('topicsRaw').innerHTML = '[Word cloud placeholder]';
     }
 
+    // Function to edit an entry
     function editEntry(i) {
       entries[i].isEditing = true;
-      renderDictionary(); // Re-render dictionary to show editable field
+      renderDictionary();
     }
 
+    // Function to save an edited entry
     function saveEdit(i) {
       const newMeaning = document.getElementById(`editMeaning${i}`).value;
       if (newMeaning && newMeaning !== entries[i].meaning) {
@@ -152,11 +200,13 @@ joke,something funny,romance,humor`;
       }
     }
 
+    // Function to cancel editing an entry
     function cancelEdit(i) {
       entries[i].isEditing = false;
       renderDictionary();
     }
 
+    // Function to confirm an edit
     function confirmEdit(i) {
       entries[i].meaning = entries[i].editedVersion;
       entries[i].editedVersion = '';
@@ -166,6 +216,7 @@ joke,something funny,romance,humor`;
       renderDictionary();
     }
 
+    // Function to reject an edit
     function rejectEdit(i) {
       entries[i].editedVersion = '';
       entries[i].status = 'none';
@@ -174,6 +225,28 @@ joke,something funny,romance,humor`;
       renderDictionary();
     }
 
+    // New Entry Form Logic
+    function showNewEntryForm() {
+      document.getElementById('newEntryForm').classList.remove('hidden');
+    }
+
+    function cancelNewEntry() {
+      document.getElementById('newEntryForm').classList.add('hidden');
+    }
+
+    function addNewEntry() {
+      const newWord = document.getElementById('newWord').value;
+      const newMeaning = document.getElementById('newMeaning').value;
+
+      if (newWord && newMeaning) {
+        entries.push({ word: newWord, meaning: newMeaning, etymology: '', topic: '', status: 'none', editedVersion: '', isEditing: false, hidden: false });
+        renderDictionary();
+        renderAdmin();
+        cancelNewEntry();
+      } else {
+        alert("Please fill out both fields.");
+      }
+    }
   </script>
 </body>
 </html>
