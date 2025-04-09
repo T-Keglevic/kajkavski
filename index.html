@@ -40,8 +40,10 @@
 
   <div id="analiza" class="tab hidden">
     <h2>Analiza</h2>
-    <div id="mockChart">[Pie chart placeholder]</div>
-    <div id="topicsRaw">[Word cloud placeholder]</div>
+    <div id="analysisResults">
+      <p>Analiza prikaza podataka:</p>
+      <!-- Placeholder removed -->
+    </div>
   </div>
 
   <!-- New Entry Form -->
@@ -58,21 +60,51 @@
   </div>
 
   <script>
-    const sampleCSV = `word,meaning,etymology,topic
-    apple,a fruit,germanic,daily life
-    tractor,a farm vehicle,slavic,agriculture
-    joke,something funny,romance,humor`;
-
-    let entries = [];
-
-    // Initialize the dictionary with mock entries
-    const mockEntries = [
-      { word: "apple", meaning: "a fruit", etymology: "germanic", topic: "daily life", status: "none", editedVersion: "", isEditing: false, hidden: false },
-      { word: "tractor", meaning: "a farm vehicle", etymology: "slavic", topic: "agriculture", status: "none", editedVersion: "", isEditing: false, hidden: false },
-      { word: "joke", meaning: "something funny", etymology: "romance", topic: "humor", status: "none", editedVersion: "", isEditing: false, hidden: false }
+    let entries = [
+      { word: "ájhlik", meaning: "?" },
+      { word: "ájnfoh", meaning: "jednostavno" },
+      { word: "báudi", meaning: "budi" },
+      { word: "brojiju", meaning: "broje" },
+      { word: "čakam", meaning: "čekam" },
+      { word: "čez", meaning: "kroz" },
+      { word: "či", meaning: "ako" },
+      { word: "člóvek", meaning: "čovjek" },
+      { word: "dal", meaning: "dao" },
+      { word: "dệilaj", meaning: "dijeli" },
+      { word: "dekletom", meaning: "djevojkom" },
+      { word: "deklicu", meaning: "djevojčicu" },
+      { word: "dnevah", meaning: "dana" },
+      { word: "domouču", meaning: "?" },
+      { word: "dọugocájten", meaning: "?" },
+      { word: "dreiva", meaning: "drveta" },
+      { word: "drügih", meaning: "drugih" },
+      { word: "duo", meaning: "dušo" },
+      { word: "duoma", meaning: "doma" },
+      { word: "dvarišu", meaning: "dvorištu" },
+      { word: "ftiček", meaning: "ptiček" },
+      { word: "gut", meaning: "grlo" },
+      { word: "híži", meaning: "kući" },
+      { word: "hodo", meaning: "hodao" },
+      { word: "hvužgala", meaning: "hvatalja" },
+      { word: "jenga", meaning: "njega" },
+      { word: "Jenkrat", meaning: "jednom" },
+      { word: "jenu", meaning: "jednu" },
+      { word: "lampušam", meaning: "s lampom" },
+      { word: "leipu", meaning: "lijepu" },
+      { word: "liepu", meaning: "lijepo" },
+      { word: "listje", meaning: "lišće" },
+      { word: "liter", meaning: "litra" },
+      { word: "lucke", meaning: "ludke" },
+      { word: "mati", meaning: "majka" },
+      { word: "mauli", meaning: "mali" },
+      { word: "Mauš", meaning: "?" },
+      { word: "merzlu", meaning: "mraznu" },
+      { word: "najrajsi", meaning: "najradije" },
+      { word: "nas", meaning: "nas" },
+      { word: "nazaj", meaning: "nazad" },
+      { word: "páč", meaning: "pač" },
+      { word: "pakaže", meaning: "pokaže" }
     ];
-
-    entries = mockEntries;
 
     renderDictionary();
 
@@ -83,7 +115,7 @@
       
       // Hide "Novi Unos" button for Analiza and Import CSV tabs
       const noviUnosButton = document.querySelector('button[onclick="showNewEntryForm()"]');
-      if (tab === 'analiza' || tab === 'importCSV') {
+      if (tab === 'analiza') {
         noviUnosButton.style.display = 'none';
       } else {
         noviUnosButton.style.display = 'inline-block';
@@ -96,19 +128,7 @@
 
     // Function to load CSV data
     function loadCSV() {
-      const lines = sampleCSV.trim().split('\n');
-      const headers = lines[0].split(',');
-      entries = lines.slice(1).map(line => {
-        const parts = line.split(',');
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = parts[i]);
-        obj.status = 'none';
-        obj.editedVersion = '';
-        obj.hidden = false;  // Add a hidden property to each entry
-        return obj;
-      });
-      alert('Sample CSV loaded!');
-      renderDictionary();
+      alert('CSV import is disabled for placeholders, only real entries show now.');
     }
 
     // Function to render the dictionary entries
@@ -155,10 +175,10 @@
           <br>
           <button onclick="editEntry(${i})">Uredi</button>
           ${entry.status === 'pending' ? `
-            <button onclick="confirmEdit(${i})">Prihvati</button>  <!-- Renamed -->
-            <button onclick="rejectEdit(${i})">Odbaci</button>  <!-- Renamed -->
+            <button onclick="confirmEdit(${i})">Prihvati</button>
+            <button onclick="rejectEdit(${i})">Odbaci</button>
           ` : ''}
-          <button onclick="hideEntry(${i})">Izbriši</button> <!-- Hide button now -->
+          <button onclick="hideEntry(${i})">Izbriši</button> <!-- Now immediately hides the entry -->
         `;
         list.appendChild(div);
       });
@@ -166,20 +186,20 @@
 
     // Function to hide an entry (instead of deleting)
     function hideEntry(i) {
-      if (confirm(`Are you sure you want to hide the word "${entries[i].word}"?`)) {
-        // Set the hidden property to true
-        entries[i].hidden = true;
+      // Set the hidden property to true immediately
+      entries[i].hidden = true;
 
-        // Re-render both the dictionary and admin list to reflect the change
-        renderDictionary();
-        renderAdmin();
-      }
+      // Re-render both the dictionary and admin list to reflect the change
+      renderDictionary();
+      renderAdmin();
     }
 
     // Function to render the analysis (currently a placeholder)
     function renderAnalysis() {
-      document.getElementById('mockChart').innerHTML = '[Pie chart placeholder]';
-      document.getElementById('topicsRaw').innerHTML = '[Word cloud placeholder]';
+      const analysisResults = document.getElementById('analysisResults');
+      analysisResults.innerHTML = `
+        <p>Analiza prikaza podataka: trenutno nema podataka za analizu.</p>
+      `;
     }
 
     // Function to edit an entry
