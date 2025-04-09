@@ -62,7 +62,6 @@
   <script>
     let entries = [
       { word: "ájhlik", meaning: "?" },
-      { word: "ájnfoh", meaning: "jednostavno" },
       { word: "báudi", meaning: "budi" },
       { word: "brojiju", meaning: "broje" },
       { word: "čakam", meaning: "čekam" },
@@ -153,6 +152,7 @@
             <strong>${entry.word}</strong>. ${entry.meaning}
             ${entry.status === 'pending' ? `<div class="gray">Proposed: ${entry.editedVersion}</div>` : ''}
             <br><button onclick="editEntry(${i})">Uredi</button>
+            <button onclick="showSinonimi(${i})">Sinonimi</button>
           `;
         }
 
@@ -179,6 +179,7 @@
             <button onclick="rejectEdit(${i})">Odbaci</button>
           ` : ''}
           <button onclick="hideEntry(${i})">Izbriši</button> <!-- Now immediately hides the entry -->
+          <button onclick="showSinonimi(${i})">Sinonimi</button> <!-- Sinonimi button -->
         `;
         list.appendChild(div);
       });
@@ -266,6 +267,11 @@
       } else {
         alert("Please fill out both fields.");
       }
+    }
+
+    // Placeholder function for Sinonimi button
+    function showSinonimi(i) {
+      alert(`Sinonimi for ${entries[i].word} are not available yet.`);
     }
   </script>
 </body>
